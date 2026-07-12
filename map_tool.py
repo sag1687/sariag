@@ -94,9 +94,9 @@ class DrawBboxTool(QgsMapTool):
 
     def canvasReleaseEvent(self, e):
         if (
-            e.button() == QtCompat.LeftButton
-            and self._drawing
-            and self._start_point is not None
+            e.button() == QtCompat.LeftButton and
+            self._drawing and
+            self._start_point is not None
         ):
             end_point = self.toMapCoordinates(e.pos())
             self._drawing = False
