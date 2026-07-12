@@ -1,0 +1,19 @@
+[general]
+name=SARIAG
+description=Download Sentinel-1 SLC time series and compute East-West / Vertical ground displacement maps via SNAP-based InSAR time series processing. / Scarica serie temporali Sentinel-1 SLC e calcola mappe di spostamento Est-Ovest / Verticale tramite elaborazione InSAR multi-temporale basata su SNAP.
+about=EN: SARIAG automates a multi-temporal InSAR (SBAS-style) workflow inside QGIS: it searches and downloads Sentinel-1 SLC scenes from the Copernicus Data Space Ecosystem for an area of interest, both ascending and descending orbit passes, drives ESA SNAP's Graph Processing Tool (gpt) to coregister, form interferograms, filter and unwrap phase (via SNAPHU), inverts the small-baseline network into per-date line-of-sight displacement time series, and decomposes the ascending+descending LOS results into East-West and Vertical displacement maps loaded directly into QGIS. Requires a local ESA SNAP installation (with the SNAPHU unwrapping plugin) and a free Copernicus Data Space Ecosystem account; SARIAG orchestrates these proven tools rather than reimplementing phase unwrapping from scratch. --- IT: SARIAG automatizza dentro QGIS un flusso InSAR multi-temporale (tipo SBAS): cerca e scarica scene Sentinel-1 SLC dal Copernicus Data Space Ecosystem per un'area di interesse, sia in orbita ascendente sia discendente, pilota il Graph Processing Tool (gpt) di ESA SNAP per coregistrazione, formazione degli interferogrammi, filtraggio e unwrapping di fase (via SNAPHU), inverte la rete a baseline corta in una serie temporale di spostamento lungo la linea di vista (LOS) per ciascuna data, e scompone i risultati ascendente+discendente in mappe di spostamento Est-Ovest e Verticale caricate direttamente in QGIS. Richiede un'installazione locale di ESA SNAP (con il plugin di unwrapping SNAPHU) e un account gratuito Copernicus Data Space Ecosystem; SARIAG orchestra questi strumenti collaudati invece di reimplementare da zero l'unwrapping di fase.
+qgisMinimumVersion=3.16
+qgisMaximumVersion=4.99
+version=0.2.0
+author=Dott. Sarino Alfonso Grande
+email=sino.grande@gmail.com
+tracker=https://github.com/sag1687/sariag/issues
+repository=https://github.com/sag1687/sariag
+homepage=https://sinocloud.it
+category=Raster
+icon=icon.svg
+tags=sar,sentinel-1,insar,sbas,displacement,deformation,interferometry,snap,snaphu,copernicus,time series,radar,subsidence
+experimental=True
+license=GPL-2.0
+changelog=0.2.0 — Info tab now includes a drop-down selector of the author's other plugins (with GitHub links), Italian/English toggle shows flag symbols, contact email and homepage updated, README rewritten bilingual. / La scheda Info ora include un menù a tendina con gli altri plugin dell'autore (con link GitHub), il selettore Italiano/Inglese mostra le bandiere, email di contatto e homepage aggiornate, README riscritto bilingue.
+    0.1.0 — Initial release: AOI/date/orbit search and download of Sentinel-1 SLC from Copernicus Data Space Ecosystem, SNAP gpt orchestration for coregistration/interferogram/unwrapping, small-baseline time series inversion, ascending+descending LOS decomposition into East-West and Vertical displacement GeoTIFFs. / Versione iniziale: ricerca e download SLC Sentinel-1 per AOI/date/orbita dal Copernicus Data Space Ecosystem, orchestrazione gpt di SNAP per coregistrazione/interferogramma/unwrapping, inversione della serie temporale a baseline corta, scomposizione LOS ascendente+discendente in GeoTIFF di spostamento Est-Ovest e Verticale.
