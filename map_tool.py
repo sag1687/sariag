@@ -76,7 +76,9 @@ class DrawBboxTool(QgsMapTool):
         self._start_point = None
         self._drawing = False
 
-        self._rb = QgsRubberBand(self.canvas, QgsWkbTypes.PolygonGeometry)
+        self._rb = QgsRubberBand(
+            self.canvas, QgsWkbTypes.GeometryType.PolygonGeometry
+        )
         self._rb.setColor(QColor(91, 155, 213, 50))
         self._rb.setWidth(2)
         try:
@@ -86,10 +88,10 @@ class DrawBboxTool(QgsMapTool):
             pass
 
     def canvasPressEvent(self, e):
-        if e.button() == QtCompat.LeftButton:
+        if e.button() == QtCompat.MouseButton.LeftButton:
             self._start_point = self.toMapCoordinates(e.pos())
             self._drawing = True
-            self._rb.reset(QgsWkbTypes.PolygonGeometry)
+            self._rb.reset(QgsWkbTypes.GeometryType.PolygonGeometry)
 
     def canvasMoveEvent(self, e):
         if self._drawing and self._start_point is not None:
@@ -98,13 +100,13 @@ class DrawBboxTool(QgsMapTool):
 
     def canvasReleaseEvent(self, e):
         if (
-            e.button() == QtCompat.LeftButton
+            e.button() == QtCompat.MouseButton.LeftButton
             and self._drawing
             and self._start_point is not None
         ):
             end_point = self.toMapCoordinates(e.pos())
             self._drawing = False
-            self._rb.reset(QgsWkbTypes.PolygonGeometry)
+            self._rb.reset(QgsWkbTypes.GeometryType.PolygonGeometry)
 
             x1, y1 = self._start_point.x(), self._start_point.y()
             x2, y2 = end_point.x(), end_point.y()
@@ -130,7 +132,7 @@ class DrawBboxTool(QgsMapTool):
     def _update_rubber_band(self, p1, p2):
         x1, y1 = p1.x(), p1.y()
         x2, y2 = p2.x(), p2.y()
-        self._rb.reset(QgsWkbTypes.PolygonGeometry)
+        self._rb.reset(QgsWkbTypes.GeometryType.PolygonGeometry)
         points = [
             QgsPointXY(x1, y1),
             QgsPointXY(x2, y1),
@@ -158,7 +160,7 @@ class DrawBboxTool(QgsMapTool):
     def reset(self):
         self._start_point = None
         self._drawing = False
-        self._rb.reset(QgsWkbTypes.PolygonGeometry)
+        self._rb.reset(QgsWkbTypes.GeometryType.PolygonGeometry)
 
     def deactivate(self):
         self.reset()
@@ -175,7 +177,9 @@ class DrawPointTool(QgsMapTool):
         self.canvas = canvas
         self.buffer_deg = buffer_deg
 
-        self._rb = QgsRubberBand(self.canvas, QgsWkbTypes.PointGeometry)
+        self._rb = QgsRubberBand(
+            self.canvas, QgsWkbTypes.GeometryType.PointGeometry
+        )
         self._rb.setColor(QColor(91, 155, 213, 200))
         self._rb.setWidth(3)
         try:
@@ -184,10 +188,10 @@ class DrawPointTool(QgsMapTool):
             pass
 
     def canvasReleaseEvent(self, e):
-        if e.button() != QtCompat.LeftButton:
+        if e.button() != QtCompat.MouseButton.LeftButton:
             return
         map_pt = self.toMapCoordinates(e.pos())
-        self._rb.reset(QgsWkbTypes.PointGeometry)
+        self._rb.reset(QgsWkbTypes.GeometryType.PointGeometry)
         self._rb.addPoint(map_pt, True)
         self._rb.show()
 
@@ -200,7 +204,7 @@ class DrawPointTool(QgsMapTool):
             self.reset()
 
     def reset(self):
-        self._rb.reset(QgsWkbTypes.PointGeometry)
+        self._rb.reset(QgsWkbTypes.GeometryType.PointGeometry)
 
     def deactivate(self):
         self.reset()

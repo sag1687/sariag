@@ -374,7 +374,7 @@ fratello di / sibling of STAC Browser.</p>
 
 def _log_warning(message):
     if QgsMessageLog is not None:
-        QgsMessageLog.logMessage(message, "SARIAG", Qgis.Warning)
+        QgsMessageLog.logMessage(message, "SARIAG", Qgis.MessageLevel.Warning)
 
 
 # ---------------------------------------------------------------------------
