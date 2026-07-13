@@ -41,8 +41,8 @@ SNAP_DOWNLOAD_PAGE = "https://step.esa.int/main/download/snap-download/"
 SNAPHU_REPO_URL = "https://github.com/gina-alaska/snaphu.git"
 SNAPHU_INSTALL_DIR = os.path.expanduser(
     os.path.join("~", ".local", "share", "SARIAG", "snaphu")
-    if not IS_WINDOWS else
-    os.path.join("~", "AppData", "Local", "SARIAG", "snaphu")
+    if not IS_WINDOWS
+    else os.path.join("~", "AppData", "Local", "SARIAG", "snaphu")
 )
 
 
@@ -74,8 +74,10 @@ def _common_gpt_paths():
             paths.append(os.path.join(base, "snap", "bin", "gpt.exe"))
     else:
         paths += [
-            "/opt/esa-snap/bin/gpt", "/opt/snap/bin/gpt",
-            "/usr/local/esa-snap/bin/gpt", "/usr/local/snap/bin/gpt",
+            "/opt/esa-snap/bin/gpt",
+            "/opt/snap/bin/gpt",
+            "/usr/local/esa-snap/bin/gpt",
+            "/usr/local/snap/bin/gpt",
             os.path.join("~", "Applications", "esa-snap", "bin", "gpt"),
             "/Applications/esa-snap/bin/gpt",
         ]
@@ -107,20 +109,27 @@ def find_gpt():
     install location, else None. ``shutil.which`` already resolves the
     ``.exe`` suffix on Windows via ``PATHEXT``, so only the manually
     listed candidate paths need it explicitly."""
-    return shutil.which("gpt") or _first_existing_executable(_common_gpt_paths())
+    return shutil.which("gpt") or _first_existing_executable(
+        _common_gpt_paths()
+    )
 
 
 def find_snaphu():
     """Return the path to ``snaphu`` if found on PATH, in a common
     location, or in SARIAG's own build directory, else None."""
-    return shutil.which("snaphu") or _first_existing_executable(_common_snaphu_paths())
+    return shutil.which("snaphu") or _first_existing_executable(
+        _common_snaphu_paths()
+    )
 
 
 def _run(cmd, log_callback, cwd=None):
     proc = subprocess.Popen(
-        cmd, cwd=cwd,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        universal_newlines=True, bufsize=1,
+        cmd,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1,
     )
     lines = []
     for line in proc.stdout:
@@ -134,8 +143,14 @@ def _run(cmd, log_callback, cwd=None):
         raise InstallError(
             "Comando fallito (exit %d): %s\n%s / "
             "Command failed (exit %d): %s\n%s"
-            % (proc.returncode, " ".join(cmd), tail,
-               proc.returncode, " ".join(cmd), tail)
+            % (
+                proc.returncode,
+                " ".join(cmd),
+                tail,
+                proc.returncode,
+                " ".join(cmd),
+                tail,
+            )
         )
 
 
@@ -181,11 +196,16 @@ def install_snaphu(log_callback=None, dest_dir=SNAPHU_INSTALL_DIR):
                 "Scaricamento sorgenti SNAPHU da GitHub... / "
                 "Downloading SNAPHU sources from GitHub..."
             )
-        _run(["git", "clone", "--depth", "1", SNAPHU_REPO_URL, src_dir], log_callback)
+        _run(
+            ["git", "clone", "--depth", "1", SNAPHU_REPO_URL, src_dir],
+            log_callback,
+        )
     else:
         if log_callback:
-            log_callback("Sorgenti già presenti, aggiornamento... / "
-                         "Sources already present, updating...")
+            log_callback(
+                "Sorgenti già presenti, aggiornamento... / "
+                "Sources already present, updating..."
+            )
         _run(["git", "-C", src_dir, "pull"], log_callback)
 
     if log_callback:

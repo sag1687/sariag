@@ -50,13 +50,17 @@ class SnapError(Exception):
 # subprocess runner shared by every step
 # ---------------------------------------------------------------------------
 
+
 def _run(cmd, cwd=None, log_callback=None, progress_callback=None):
     if log_callback:
         log_callback("$ " + " ".join(cmd))
     proc = subprocess.Popen(
-        cmd, cwd=cwd,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        universal_newlines=True, bufsize=1,
+        cmd,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1,
     )
     lines = []
     for line in proc.stdout:
@@ -74,8 +78,14 @@ def _run(cmd, cwd=None, log_callback=None, progress_callback=None):
         raise SnapError(
             "Comando fallito (exit %d): %s\n%s / "
             "Command failed (exit %d): %s\n%s"
-            % (proc.returncode, " ".join(cmd), tail,
-               proc.returncode, " ".join(cmd), tail)
+            % (
+                proc.returncode,
+                " ".join(cmd),
+                tail,
+                proc.returncode,
+                " ".join(cmd),
+                tail,
+            )
         )
     return lines
 
@@ -208,42 +218,70 @@ _COREG_IFG_GRAPH = """<graph id="sariag_coreg_ifg">
 
 
 def build_coreg_ifg_graph(
-    master_path, slave_path, out_dim_path,
-    subswath="IW1", polarisation="VV",
-    first_burst=1, last_burst=9,
+    master_path,
+    slave_path,
+    out_dim_path,
+    subswath="IW1",
+    polarisation="VV",
+    first_burst=1,
+    last_burst=9,
     dem_name="SRTM 1Sec HGT",
-    rg_looks=4, az_looks=1,
+    rg_looks=4,
+    az_looks=1,
 ):
-    """Build the coregistration + interferogram + Goldstein-filter graph XML."""
+    """Build the coregistration + interferogram + Goldstein-filter graph
+    XML."""
     return _COREG_IFG_GRAPH.format(
-        master=_x(master_path), slave=_x(slave_path),
-        subswath=_x(subswath), polarisation=_x(polarisation),
-        first_burst=int(first_burst), last_burst=int(last_burst),
+        master=_x(master_path),
+        slave=_x(slave_path),
+        subswath=_x(subswath),
+        polarisation=_x(polarisation),
+        first_burst=int(first_burst),
+        last_burst=int(last_burst),
         dem_name=_x(dem_name),
         out_dim=_x(out_dim_path),
-        rg_looks=int(rg_looks), az_looks=int(az_looks),
+        rg_looks=int(rg_looks),
+        az_looks=int(az_looks),
     )
 
 
 def run_coreg_ifg(
-    gpt_exe, master_path, slave_path, out_dim_path,
-    subswath="IW1", polarisation="VV",
-    first_burst=1, last_burst=9,
+    gpt_exe,
+    master_path,
+    slave_path,
+    out_dim_path,
+    subswath="IW1",
+    polarisation="VV",
+    first_burst=1,
+    last_burst=9,
     dem_name="SRTM 1Sec HGT",
-    rg_looks=4, az_looks=1,
-    log_callback=None, progress_callback=None,
+    rg_looks=4,
+    az_looks=1,
+    log_callback=None,
+    progress_callback=None,
 ):
-    """Write the coreg/interferogram graph to disk next to the output and run it."""
+    """Write the coreg/interferogram graph to disk next to the output
+    and run it."""
     graph_xml = build_coreg_ifg_graph(
-        master_path, slave_path, out_dim_path,
-        subswath, polarisation, first_burst, last_burst,
-        dem_name, rg_looks, az_looks,
+        master_path,
+        slave_path,
+        out_dim_path,
+        subswath,
+        polarisation,
+        first_burst,
+        last_burst,
+        dem_name,
+        rg_looks,
+        az_looks,
     )
     graph_path = os.path.splitext(out_dim_path)[0] + "_graph.xml"
     with open(graph_path, "w", encoding="utf-8") as f:
         f.write(graph_xml)
-    _run([gpt_exe, graph_path, "-x"],
-         log_callback=log_callback, progress_callback=progress_callback)
+    _run(
+        [gpt_exe, graph_path, "-x"],
+        log_callback=log_callback,
+        progress_callback=progress_callback,
+    )
     return out_dim_path
 
 
@@ -276,18 +314,25 @@ _SNAPHU_EXPORT_GRAPH = """<graph id="sariag_snaphu_export">
 
 
 def run_snaphu_export(
-    gpt_exe, in_dim_path, export_dir,
-    log_callback=None, progress_callback=None,
+    gpt_exe,
+    in_dim_path,
+    export_dir,
+    log_callback=None,
+    progress_callback=None,
 ):
     os.makedirs(export_dir, exist_ok=True)
     graph_xml = _SNAPHU_EXPORT_GRAPH.format(
-        in_dim=_x(in_dim_path), export_dir=_x(export_dir),
+        in_dim=_x(in_dim_path),
+        export_dir=_x(export_dir),
     )
     graph_path = os.path.join(export_dir, "snaphu_export_graph.xml")
     with open(graph_path, "w", encoding="utf-8") as f:
         f.write(graph_xml)
-    _run([gpt_exe, graph_path, "-x"],
-         log_callback=log_callback, progress_callback=progress_callback)
+    _run(
+        [gpt_exe, graph_path, "-x"],
+        log_callback=log_callback,
+        progress_callback=progress_callback,
+    )
 
     conf_path = None
     for root, _dirs, files in os.walk(export_dir):
@@ -297,9 +342,8 @@ def run_snaphu_export(
     if conf_path is None:
         raise SnapError(
             "SnaphuExport non ha prodotto snaphu.conf in %s. / "
-            "SnaphuExport did not produce snaphu.conf in %s." % (
-                export_dir, export_dir
-            )
+            "SnaphuExport did not produce snaphu.conf in %s."
+            % (export_dir, export_dir)
         )
     return conf_path
 
@@ -392,9 +436,14 @@ _SNAPHU_IMPORT_GEOCODE_GRAPH = """<graph id="sariag_snaphu_import_geocode">
 
 
 def run_snaphu_import_geocode(
-    gpt_exe, in_dim_path, unwrapped_hdr_path, out_tif_path,
-    dem_name="SRTM 1Sec HGT", pixel_spacing=20.0,
-    log_callback=None, progress_callback=None,
+    gpt_exe,
+    in_dim_path,
+    unwrapped_hdr_path,
+    out_tif_path,
+    dem_name="SRTM 1Sec HGT",
+    pixel_spacing=20.0,
+    log_callback=None,
+    progress_callback=None,
 ):
     """
     Import the unwrapped phase produced by snaphu back into SNAP, convert
@@ -411,8 +460,11 @@ def run_snaphu_import_geocode(
     graph_path = os.path.splitext(out_tif_path)[0] + "_import_graph.xml"
     with open(graph_path, "w", encoding="utf-8") as f:
         f.write(graph_xml)
-    _run([gpt_exe, graph_path, "-x"],
-         log_callback=log_callback, progress_callback=progress_callback)
+    _run(
+        [gpt_exe, graph_path, "-x"],
+        log_callback=log_callback,
+        progress_callback=progress_callback,
+    )
     return out_tif_path
 
 
@@ -425,7 +477,9 @@ def find_unwrapped_phase_header(export_dir):
     candidates = []
     for root, _dirs, files in os.walk(export_dir):
         for name in files:
-            if name.lower().startswith("unwphase") and name.lower().endswith(".hdr"):
+            if name.lower().startswith("unwphase") and name.lower().endswith(
+                ".hdr"
+            ):
                 candidates.append(os.path.join(root, name))
     if not candidates:
         raise SnapError(
@@ -442,14 +496,24 @@ def find_unwrapped_phase_header(export_dir):
 # Full single-pair pipeline
 # ---------------------------------------------------------------------------
 
+
 def process_pair(
-    gpt_exe, snaphu_exe,
-    master_path, slave_path, work_dir, pair_name,
-    subswath="IW1", polarisation="VV",
-    first_burst=1, last_burst=9,
+    gpt_exe,
+    snaphu_exe,
+    master_path,
+    slave_path,
+    work_dir,
+    pair_name,
+    subswath="IW1",
+    polarisation="VV",
+    first_burst=1,
+    last_burst=9,
     dem_name="SRTM 1Sec HGT",
-    rg_looks=4, az_looks=1, pixel_spacing=20.0,
-    log_callback=None, progress_callback=None,
+    rg_looks=4,
+    az_looks=1,
+    pixel_spacing=20.0,
+    log_callback=None,
+    progress_callback=None,
 ):
     """
     Run the full SNAP + SNAPHU chain for one interferometric pair and
@@ -458,6 +522,7 @@ def process_pair(
     progress_callback(stage_name, percent) if given; percent is the
     progress of the current stage, not of the whole pipeline.
     """
+
     def _stage(name, pct):
         if progress_callback:
             progress_callback(name, pct)
@@ -468,22 +533,36 @@ def process_pair(
     out_tif = os.path.join(work_dir, pair_name + "_los_disp.tif")
 
     run_coreg_ifg(
-        gpt_exe, master_path, slave_path, dim_path,
-        subswath, polarisation, first_burst, last_burst,
-        dem_name, rg_looks, az_looks,
+        gpt_exe,
+        master_path,
+        slave_path,
+        dim_path,
+        subswath,
+        polarisation,
+        first_burst,
+        last_burst,
+        dem_name,
+        rg_looks,
+        az_looks,
         log_callback=log_callback,
         progress_callback=lambda p: _stage("coreg_ifg", p),
     )
     conf_path = run_snaphu_export(
-        gpt_exe, dim_path, export_dir,
+        gpt_exe,
+        dim_path,
+        export_dir,
         log_callback=log_callback,
         progress_callback=lambda p: _stage("snaphu_export", p),
     )
     run_snaphu_unwrap(snaphu_exe, conf_path, log_callback=log_callback)
     unwrapped_hdr = find_unwrapped_phase_header(export_dir)
     run_snaphu_import_geocode(
-        gpt_exe, dim_path, unwrapped_hdr, out_tif,
-        dem_name, pixel_spacing,
+        gpt_exe,
+        dim_path,
+        unwrapped_hdr,
+        out_tif,
+        dem_name,
+        pixel_spacing,
         log_callback=log_callback,
         progress_callback=lambda p: _stage("import_geocode", p),
     )

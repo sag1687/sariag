@@ -28,19 +28,40 @@ is normally a multi-hour SNAP processing run.
 """
 
 from qgis.PyQt.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QPushButton, QLabel,
-    QComboBox, QSpinBox, QDoubleSpinBox, QWidget, QTabWidget,
-    QProgressBar, QGroupBox, QPlainTextEdit, QFileDialog, QDateEdit,
-    QMessageBox, QLineEdit, QTextBrowser,
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QPushButton,
+    QLabel,
+    QComboBox,
+    QSpinBox,
+    QDoubleSpinBox,
+    QWidget,
+    QTabWidget,
+    QProgressBar,
+    QGroupBox,
+    QPlainTextEdit,
+    QFileDialog,
+    QDateEdit,
+    QMessageBox,
+    QLineEdit,
+    QTextBrowser,
 )
 from qgis.PyQt.QtCore import Qt, QThread, pyqtSignal, QDate, QTimer, QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 
 try:
     from qgis.core import (
-        QgsProject, QgsRasterLayer, QgsMessageLog, Qgis,
-        QgsRasterShader, QgsColorRampShader, QgsSingleBandPseudoColorRenderer,
+        QgsProject,
+        QgsRasterLayer,
+        QgsMessageLog,
+        Qgis,
+        QgsRasterShader,
+        QgsColorRampShader,
+        QgsSingleBandPseudoColorRenderer,
     )
+
     _HAS_QGIS = True
 except ImportError:
     _HAS_QGIS = False
@@ -266,7 +287,8 @@ reimplementing them.</p>
   <tr><td>Scene Sentinel-1 SLC / Sentinel-1 SLC scenes</td>
       <td><span class="badge-ok">CC BY 4.0</span> (Copernicus/ESA)</td>
       <td>Gratuito / Free &mdash;
-      <a href="https://dataspace.copernicus.eu/">dataspace.copernicus.eu</a></td></tr>
+      <a href="https://dataspace.copernicus.eu/">dataspace.copernicus.eu</a>
+      </td></tr>
   <tr><td>ESA SNAP (<code>gpt</code>)</td>
       <td>Gratuito / Free (ESA)</td>
       <td>Nessuno / None</td></tr>
@@ -359,6 +381,7 @@ def _log_warning(message):
 # Background workers
 # ---------------------------------------------------------------------------
 
+
 class PipelineWorker(QThread):
     logMessage = pyqtSignal(str)
     progressChanged = pyqtSignal(str, int)
@@ -378,11 +401,15 @@ class PipelineWorker(QThread):
             result = pipeline.run_pipeline(
                 self.params,
                 log=lambda msg: self.logMessage.emit(msg),
-                progress=lambda stage, pct: self.progressChanged.emit(stage, pct),
+                progress=lambda stage, pct: self.progressChanged.emit(
+                    stage, pct
+                ),
                 cancel_check=lambda: self._cancel,
             )
             self.finishedOk.emit(result)
-        except Exception as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
+        except (
+            Exception
+        ) as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
             self.finishedError.emit(str(exc))
 
 
@@ -394,11 +421,21 @@ class AvailabilityWorker(QThread):
     pick a relative orbit from real data instead of guessing a number.
     """
 
-    resultReady = pyqtSignal(dict, dict, dict)  # groups_asc, groups_desc, token
+    resultReady = pyqtSignal(
+        dict, dict, dict
+    )  # groups_asc, groups_desc, token
     errorOccurred = pyqtSignal(str)
 
-    def __init__(self, username, password, bbox, date_from, date_to,
-                 token=None, parent=None):
+    def __init__(
+        self,
+        username,
+        password,
+        bbox,
+        date_from,
+        date_to,
+        token=None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.username = username
         self.password = password
@@ -413,22 +450,32 @@ class AvailabilityWorker(QThread):
                 try:
                     token = core_cdse.ensure_valid_token(self.token)
                 except core_cdse.CdseError:
-                    token = core_cdse.authenticate(self.username, self.password)
+                    token = core_cdse.authenticate(
+                        self.username, self.password
+                    )
             else:
                 token = core_cdse.authenticate(self.username, self.password)
 
             asc = core_cdse.search_s1_slc(
-                token["access_token"], self.bbox, self.date_from, self.date_to,
+                token["access_token"],
+                self.bbox,
+                self.date_from,
+                self.date_to,
                 orbit_direction=core_cdse.ORBIT_ASCENDING,
             )
             desc = core_cdse.search_s1_slc(
-                token["access_token"], self.bbox, self.date_from, self.date_to,
+                token["access_token"],
+                self.bbox,
+                self.date_from,
+                self.date_to,
                 orbit_direction=core_cdse.ORBIT_DESCENDING,
             )
             groups_asc = core_cdse.group_by_relative_orbit(asc)
             groups_desc = core_cdse.group_by_relative_orbit(desc)
             self.resultReady.emit(groups_asc, groups_desc, token)
-        except Exception as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
+        except (
+            Exception
+        ) as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
             self.errorOccurred.emit(str(exc))
 
 
@@ -443,13 +490,16 @@ class SnaphuInstallWorker(QThread):
                 log_callback=lambda msg: self.logMessage.emit(msg)
             )
             self.finishedOk.emit(path)
-        except Exception as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
+        except (
+            Exception
+        ) as exc:  # noqa: BLE001 — surfaced to the UI, not swallowed
             self.finishedError.emit(str(exc))
 
 
 # ---------------------------------------------------------------------------
 # Dialog
 # ---------------------------------------------------------------------------
+
 
 class SariagDialog(QDialog):
 
@@ -470,8 +520,8 @@ class SariagDialog(QDialog):
         # Retranslation registries, filled while building each tab and
         # consumed by _update_ui_lang() (see the bottom of this file).
         self._i18n_widgets = []  # (widget, setter_name, it, en)
-        self._i18n_tabs = []     # (tabs_widget, index, it, en)
-        self._i18n_items = []    # (combo, index, it, en)
+        self._i18n_tabs = []  # (tabs_widget, index, it, en)
+        self._i18n_items = []  # (combo, index, it, en)
 
         self._build_ui()
         self._update_ui_lang()
@@ -510,11 +560,13 @@ class SariagDialog(QDialog):
 
     def _update_ui_lang(self):
         lang = self.lang
-        self.setWindowTitle(_t(
-            lang,
-            "SARIAG — Serie temporali Sentinel-1 (InSAR)",
-            "SARIAG — Sentinel-1 time series (InSAR)",
-        ))
+        self.setWindowTitle(
+            _t(
+                lang,
+                "SARIAG — Serie temporali Sentinel-1 (InSAR)",
+                "SARIAG — Sentinel-1 time series (InSAR)",
+            )
+        )
         self.btn_lang.setText(plugin_hub.lang_button_label(lang))
         if hasattr(self, "family_widget"):
             self.family_widget.set_lang(lang)
@@ -562,15 +614,27 @@ class SariagDialog(QDialog):
         layout.addWidget(self.tabs)
 
         self.TAB_AREA = self.tabs.addTab(self._build_area_tab(), "")
-        self._tr_tab(self.tabs, self.TAB_AREA, "Area && periodo", "Area && dates")
+        self._tr_tab(
+            self.tabs, self.TAB_AREA, "Area && periodo", "Area && dates"
+        )
 
-        self.TAB_CREDENTIALS = self.tabs.addTab(self._build_credentials_tab(), "")
-        self._tr_tab(self.tabs, self.TAB_CREDENTIALS,
-                     "Credenziali && percorsi", "Credentials && paths")
+        self.TAB_CREDENTIALS = self.tabs.addTab(
+            self._build_credentials_tab(), ""
+        )
+        self._tr_tab(
+            self.tabs,
+            self.TAB_CREDENTIALS,
+            "Credenziali && percorsi",
+            "Credentials && paths",
+        )
 
         self.TAB_PARAMS = self.tabs.addTab(self._build_params_tab(), "")
-        self._tr_tab(self.tabs, self.TAB_PARAMS,
-                     "Parametri avanzati", "Advanced parameters")
+        self._tr_tab(
+            self.tabs,
+            self.TAB_PARAMS,
+            "Parametri avanzati",
+            "Advanced parameters",
+        )
 
         self.TAB_RUN = self.tabs.addTab(self._build_run_tab(), "")
         self._tr_tab(self.tabs, self.TAB_RUN, "Elabora", "Run")
@@ -584,12 +648,18 @@ class SariagDialog(QDialog):
         self._availability_timer.setSingleShot(True)
         self._availability_timer.timeout.connect(self._run_availability_search)
         for widget, signal_name in (
-            (self.sb_west, "valueChanged"), (self.sb_south, "valueChanged"),
-            (self.sb_east, "valueChanged"), (self.sb_north, "valueChanged"),
-            (self.de_from, "dateChanged"), (self.de_to, "dateChanged"),
-            (self.ed_user, "textChanged"), (self.ed_pwd, "textChanged"),
+            (self.sb_west, "valueChanged"),
+            (self.sb_south, "valueChanged"),
+            (self.sb_east, "valueChanged"),
+            (self.sb_north, "valueChanged"),
+            (self.de_from, "dateChanged"),
+            (self.de_to, "dateChanged"),
+            (self.ed_user, "textChanged"),
+            (self.ed_pwd, "textChanged"),
         ):
-            getattr(widget, signal_name).connect(self._schedule_availability_search)
+            getattr(widget, signal_name).connect(
+                self._schedule_availability_search
+            )
 
     def _make_coord_spin(self, lo, hi, default):
         sb = QDoubleSpinBox()
@@ -602,7 +672,9 @@ class SariagDialog(QDialog):
         w = QWidget()
         v = QVBoxLayout(w)
 
-        bbox_group = self._mkgroup("Area di interesse (AOI)", "Area of interest (AOI)")
+        bbox_group = self._mkgroup(
+            "Area di interesse (AOI)", "Area of interest (AOI)"
+        )
         form = QFormLayout(bbox_group)
         self.sb_west = self._make_coord_spin(-180, 180, -9.0)
         self.sb_south = self._make_coord_spin(-90, 90, 38.0)
@@ -635,22 +707,26 @@ class SariagDialog(QDialog):
         self.cb_ro_asc = QComboBox()
         self.cb_ro_asc.addItem("", None)
         self._tr_item(
-            self.cb_ro_asc, 0,
+            self.cb_ro_asc,
+            0,
             "Automatico (in attesa di ricerca...)",
             "Automatic (waiting for search...)",
         )
         self.cb_ro_desc = QComboBox()
         self.cb_ro_desc.addItem("", None)
         self._tr_item(
-            self.cb_ro_desc, 0,
+            self.cb_ro_desc,
+            0,
             "Automatico (in attesa di ricerca...)",
             "Automatic (waiting for search...)",
         )
         form3.addRow(
-            self._mklabel("Orbita ascendente:", "Ascending orbit:"), self.cb_ro_asc
+            self._mklabel("Orbita ascendente:", "Ascending orbit:"),
+            self.cb_ro_asc,
         )
         form3.addRow(
-            self._mklabel("Orbita discendente:", "Descending orbit:"), self.cb_ro_desc
+            self._mklabel("Orbita discendente:", "Descending orbit:"),
+            self.cb_ro_desc,
         )
 
         self.lbl_availability = QLabel()
@@ -663,7 +739,9 @@ class SariagDialog(QDialog):
         )
         form3.addRow(self.lbl_availability)
 
-        btn_refresh_availability = self._mkbutton("Aggiorna ora", "Refresh now")
+        btn_refresh_availability = self._mkbutton(
+            "Aggiorna ora", "Refresh now"
+        )
         btn_refresh_availability.clicked.connect(self._run_availability_search)
         form3.addRow(btn_refresh_availability)
 
@@ -691,7 +769,8 @@ class SariagDialog(QDialog):
         form.addRow("Password:", self.ed_pwd)
         self.lbl_hint = QLabel()
         self._tr(
-            self.lbl_hint, "setText",
+            self.lbl_hint,
+            "setText",
             '<a href="https://dataspace.copernicus.eu/">'
             "Registrati su dataspace.copernicus.eu</a>",
             '<a href="https://dataspace.copernicus.eu/">'
@@ -741,7 +820,8 @@ class SariagDialog(QDialog):
 
         install_note = QLabel()
         self._tr(
-            install_note, "setText",
+            install_note,
+            "setText",
             "SNAP e SNAPHU sono entrambi gratuiti. 'Rileva' cerca "
             "un'installazione già presente sul sistema; 'Installa' scarica "
             "e compila SNAPHU in locale (richiede git + un compilatore C, "
@@ -786,14 +866,17 @@ class SariagDialog(QDialog):
 
     def _browse_file(self, line_edit, hint):
         path, _filter = QFileDialog.getOpenFileName(
-            self, _t(self.lang, "Seleziona %s", "Select %s") % hint, line_edit.text()
+            self,
+            _t(self.lang, "Seleziona %s", "Select %s") % hint,
+            line_edit.text(),
         )
         if path:
             line_edit.setText(path)
 
     def _browse_workdir(self):
         path = QFileDialog.getExistingDirectory(
-            self, _t(self.lang, "Cartella di lavoro", "Work folder"),
+            self,
+            _t(self.lang, "Cartella di lavoro", "Work folder"),
             self.ed_workdir.text(),
         )
         if path:
@@ -809,13 +892,15 @@ class SariagDialog(QDialog):
             self.ed_gpt.setText(found)
         else:
             QMessageBox.information(
-                self, "SARIAG", _t(
+                self,
+                "SARIAG",
+                _t(
                     self.lang,
                     "gpt non trovato automaticamente: installa SNAP e "
                     "indica il percorso manualmente.",
                     "gpt not found automatically: install SNAP and set "
                     "the path manually.",
-                )
+                ),
             )
 
     def _detect_snaphu(self):
@@ -824,22 +909,28 @@ class SariagDialog(QDialog):
             self.ed_snaphu.setText(found)
         else:
             QMessageBox.information(
-                self, "SARIAG", _t(
+                self,
+                "SARIAG",
+                _t(
                     self.lang,
                     "snaphu non trovato automaticamente: prova 'Installa' "
                     "o indica il percorso manualmente.",
                     "snaphu not found automatically: try 'Install' or set "
                     "the path manually.",
-                )
+                ),
             )
 
     def _install_snaphu(self):
         self.btn_snaphu_install.setEnabled(False)
         self.install_log.clear()
         self._snaphu_worker = SnaphuInstallWorker(self)
-        self._snaphu_worker.logMessage.connect(self.install_log.appendPlainText)
+        self._snaphu_worker.logMessage.connect(
+            self.install_log.appendPlainText
+        )
         self._snaphu_worker.finishedOk.connect(self._on_snaphu_installed)
-        self._snaphu_worker.finishedError.connect(self._on_snaphu_install_error)
+        self._snaphu_worker.finishedError.connect(
+            self._on_snaphu_install_error
+        )
         self._snaphu_worker.finished.connect(self._snaphu_worker.deleteLater)
         self._snaphu_worker.start()
 
@@ -909,12 +1000,14 @@ class SariagDialog(QDialog):
         self._tr_item(self.cb_los_sign, 0, "+1 (predefinito)", "+1 (default)")
         self._tr_item(self.cb_los_sign, 1, "-1 (invertito)", "-1 (inverted)")
         form.addRow(
-            self._mklabel("Segno verticale:", "Vertical sign:"), self.cb_los_sign
+            self._mklabel("Segno verticale:", "Vertical sign:"),
+            self.cb_los_sign,
         )
 
         note = QLabel()
         self._tr(
-            note, "setText",
+            note,
+            "setText",
             "Se lo spostamento verticale risulta invertito rispetto a un "
             "riferimento noto (es. area in subsidenza nota), cambiare "
             "questo segno.",
@@ -990,11 +1083,19 @@ class SariagDialog(QDialog):
     def _load_settings(self):
         if QgsSettings is not None:
             s = QgsSettings()
-            self.ed_user.setText(s.value(_SETTINGS_BASE + "/cdse_username", "") or "")
-            self.ed_pwd.setText(s.value(_SETTINGS_BASE + "/cdse_password", "") or "")
+            self.ed_user.setText(
+                s.value(_SETTINGS_BASE + "/cdse_username", "") or ""
+            )
+            self.ed_pwd.setText(
+                s.value(_SETTINGS_BASE + "/cdse_password", "") or ""
+            )
             self.ed_gpt.setText(s.value(_SETTINGS_BASE + "/gpt_exe", "") or "")
-            self.ed_snaphu.setText(s.value(_SETTINGS_BASE + "/snaphu_exe", "") or "")
-            self.ed_workdir.setText(s.value(_SETTINGS_BASE + "/work_dir", "") or "")
+            self.ed_snaphu.setText(
+                s.value(_SETTINGS_BASE + "/snaphu_exe", "") or ""
+            )
+            self.ed_workdir.setText(
+                s.value(_SETTINGS_BASE + "/work_dir", "") or ""
+            )
             saved_lang = s.value(_SETTINGS_BASE + "/lang", "") or ""
             if saved_lang in ("it", "en") and saved_lang != self.lang:
                 self.lang = saved_lang
@@ -1014,19 +1115,32 @@ class SariagDialog(QDialog):
     def _save_settings(self):
         if QgsSettings is None:
             QMessageBox.information(
-                self, "SARIAG",
-                _t(self.lang, "QgsSettings non disponibile.", "QgsSettings unavailable."),
+                self,
+                "SARIAG",
+                _t(
+                    self.lang,
+                    "QgsSettings non disponibile.",
+                    "QgsSettings unavailable.",
+                ),
             )
             return
         s = QgsSettings()
-        s.setValue(_SETTINGS_BASE + "/cdse_username", self.ed_user.text().strip())
+        s.setValue(
+            _SETTINGS_BASE + "/cdse_username", self.ed_user.text().strip()
+        )
         s.setValue(_SETTINGS_BASE + "/cdse_password", self.ed_pwd.text())
         s.setValue(_SETTINGS_BASE + "/gpt_exe", self.ed_gpt.text().strip())
-        s.setValue(_SETTINGS_BASE + "/snaphu_exe", self.ed_snaphu.text().strip())
-        s.setValue(_SETTINGS_BASE + "/work_dir", self.ed_workdir.text().strip())
+        s.setValue(
+            _SETTINGS_BASE + "/snaphu_exe", self.ed_snaphu.text().strip()
+        )
+        s.setValue(
+            _SETTINGS_BASE + "/work_dir", self.ed_workdir.text().strip()
+        )
         s.setValue(_SETTINGS_BASE + "/lang", self.lang)
         QMessageBox.information(
-            self, "SARIAG", _t(self.lang, "Impostazioni salvate.", "Settings saved.")
+            self,
+            "SARIAG",
+            _t(self.lang, "Impostazioni salvate.", "Settings saved."),
         )
 
     # ------------------------------------------------------------------
@@ -1036,41 +1150,58 @@ class SariagDialog(QDialog):
     def _collect_params(self):
         L = self.lang
         bbox = [
-            self.sb_west.value(), self.sb_south.value(),
-            self.sb_east.value(), self.sb_north.value(),
+            self.sb_west.value(),
+            self.sb_south.value(),
+            self.sb_east.value(),
+            self.sb_north.value(),
         ]
         if bbox[0] >= bbox[2] or bbox[1] >= bbox[3]:
-            raise ValueError(_t(
-                L,
-                "Area non valida: verificare West<East e South<North.",
-                "Invalid area: check West<East and South<North.",
-            ))
+            raise ValueError(
+                _t(
+                    L,
+                    "Area non valida: verificare West<East e South<North.",
+                    "Invalid area: check West<East and South<North.",
+                )
+            )
         if self.de_from.date() >= self.de_to.date():
-            raise ValueError(_t(
-                L,
-                "Periodo non valido: la data iniziale deve precedere la finale.",
-                "Invalid date range: the start date must be before the end date.",
-            ))
+            raise ValueError(
+                _t(
+                    L,
+                    "Periodo non valido: la data iniziale deve precedere la "
+                    "finale.",
+                    "Invalid date range: the start date must be before the "
+                    "end date.",
+                )
+            )
         if not self.ed_user.text().strip() or not self.ed_pwd.text():
-            raise ValueError(_t(
-                L,
-                "Inserire le credenziali CDSE nella scheda Credenziali.",
-                "Enter CDSE credentials in the Credentials tab.",
-            ))
+            raise ValueError(
+                _t(
+                    L,
+                    "Inserire le credenziali CDSE nella scheda Credenziali.",
+                    "Enter CDSE credentials in the Credentials tab.",
+                )
+            )
         if not self.ed_gpt.text().strip() or not self.ed_snaphu.text().strip():
-            raise ValueError(_t(
-                L,
-                "Indicare i percorsi di gpt e snaphu nella scheda Credenziali.",
-                "Set the gpt and snaphu paths in the Credentials tab.",
-            ))
+            raise ValueError(
+                _t(
+                    L,
+                    "Indicare i percorsi di gpt e snaphu nella scheda "
+                    "Credenziali.",
+                    "Set the gpt and snaphu paths in the Credentials tab.",
+                )
+            )
         if not self.ed_workdir.text().strip():
-            raise ValueError(_t(L, "Indicare una cartella di lavoro.", "Set a work folder."))
+            raise ValueError(
+                _t(L, "Indicare una cartella di lavoro.", "Set a work folder.")
+            )
         if self.sb_first_burst.value() > self.sb_last_burst.value():
-            raise ValueError(_t(
-                L,
-                "Il primo burst deve precedere l'ultimo.",
-                "First burst must not be after last burst.",
-            ))
+            raise ValueError(
+                _t(
+                    L,
+                    "Il primo burst deve precedere l'ultimo.",
+                    "First burst must not be after last burst.",
+                )
+            )
 
         params = {
             "bbox": bbox,
@@ -1119,27 +1250,41 @@ class SariagDialog(QDialog):
         password = self.ed_pwd.text()
         if not username or not password:
             self._set_availability_text(
-                "Inserisci le credenziali CDSE per vedere le scene disponibili.",
+                "Inserisci le credenziali CDSE per vedere le scene "
+                "disponibili.",
                 "Enter your CDSE credentials to see available scenes.",
             )
             return
-        if self._availability_worker is not None and self._availability_worker.isRunning():
+        if (
+            self._availability_worker is not None
+            and self._availability_worker.isRunning()
+        ):
             # Field still changing while a search is in flight — the
             # debounce timer will fire again once things settle.
             return
 
         self._set_availability_text(
-            "Ricerca disponibilità in corso...", "Checking availability...",
+            "Ricerca disponibilità in corso...",
+            "Checking availability...",
         )
         self._availability_worker = AvailabilityWorker(
-            username, password, [west, south, east, north],
+            username,
+            password,
+            [west, south, east, north],
             self.de_from.date().toString("yyyy-MM-dd"),
             self.de_to.date().toString("yyyy-MM-dd"),
-            token=self._availability_token, parent=self,
+            token=self._availability_token,
+            parent=self,
         )
-        self._availability_worker.resultReady.connect(self._on_availability_result)
-        self._availability_worker.errorOccurred.connect(self._on_availability_error)
-        self._availability_worker.finished.connect(self._availability_worker.deleteLater)
+        self._availability_worker.resultReady.connect(
+            self._on_availability_result
+        )
+        self._availability_worker.errorOccurred.connect(
+            self._on_availability_error
+        )
+        self._availability_worker.finished.connect(
+            self._availability_worker.deleteLater
+        )
         self._availability_worker.start()
 
     def _on_availability_result(self, groups_asc, groups_desc, token):
@@ -1149,10 +1294,8 @@ class SariagDialog(QDialog):
         self._populate_orbit_combo(self.cb_ro_asc, groups_asc)
         self._populate_orbit_combo(self.cb_ro_desc, groups_desc)
         self._set_availability_text(
-            "Trovate %d scene ascendenti e %d discendenti."
-            % (n_asc, n_desc),
-            "Found %d ascending and %d descending scenes."
-            % (n_asc, n_desc),
+            "Trovate %d scene ascendenti e %d discendenti." % (n_asc, n_desc),
+            "Found %d ascending and %d descending scenes." % (n_asc, n_desc),
         )
 
     def _on_availability_error(self, message):
@@ -1166,8 +1309,11 @@ class SariagDialog(QDialog):
         combo.blockSignals(True)
         combo.clear()
         combo.addItem(
-            _t(self.lang, "Automatico (orbita più popolata)",
-               "Automatic (largest stack)"),
+            _t(
+                self.lang,
+                "Automatico (orbita più popolata)",
+                "Automatic (largest stack)",
+            ),
             None,
         )
         restore_index = 0
@@ -1179,7 +1325,8 @@ class SariagDialog(QDialog):
                     self.lang,
                     "Orbita %s — %d scene (%s → %s)",
                     "Orbit %s — %d scenes (%s → %s)",
-                ) % (relative_orbit, len(items), first, last),
+                )
+                % (relative_orbit, len(items), first, last),
                 relative_orbit,
             )
             if relative_orbit == previous:
@@ -1212,11 +1359,14 @@ class SariagDialog(QDialog):
     def _cancel_pipeline(self):
         if self.worker:
             self.worker.cancel()
-            self._on_log(_t(
-                self.lang,
-                "Annullamento richiesto (effettivo tra una fase e l'altra)...",
-                "Cancellation requested (takes effect between stages)...",
-            ))
+            self._on_log(
+                _t(
+                    self.lang,
+                    "Annullamento richiesto (effettivo tra una fase e "
+                    "l'altra)...",
+                    "Cancellation requested (takes effect between stages)...",
+                )
+            )
 
     def _on_log(self, msg):
         self.log_view.appendPlainText(msg)
@@ -1232,7 +1382,9 @@ class SariagDialog(QDialog):
         self.btn_run.setEnabled(True)
         self.btn_cancel.setEnabled(False)
         self.btn_load.setEnabled(True)
-        self._on_log(_t(self.lang, "Elaborazione completata.", "Processing complete."))
+        self._on_log(
+            _t(self.lang, "Elaborazione completata.", "Processing complete.")
+        )
         self._load_results()
 
     def _on_finished_error(self, message):
@@ -1252,11 +1404,19 @@ class SariagDialog(QDialog):
 
         vert_layer = QgsRasterLayer(
             self._results["vertical"],
-            _t(self.lang, "SARIAG — Spostamento Verticale", "SARIAG — Vertical Displacement"),
+            _t(
+                self.lang,
+                "SARIAG — Spostamento Verticale",
+                "SARIAG — Vertical Displacement",
+            ),
         )
         ew_layer = QgsRasterLayer(
             self._results["eastwest"],
-            _t(self.lang, "SARIAG — Spostamento Est-Ovest", "SARIAG — East-West Displacement"),
+            _t(
+                self.lang,
+                "SARIAG — Spostamento Est-Ovest",
+                "SARIAG — East-West Displacement",
+            ),
         )
         for layer in (vert_layer, ew_layer):
             if layer.isValid():
@@ -1276,7 +1436,9 @@ class SariagDialog(QDialog):
         try:
             provider = layer.dataProvider()
             stats = provider.bandStatistics(1)
-            bound = max(abs(stats.minimumValue), abs(stats.maximumValue)) or 1.0
+            bound = (
+                max(abs(stats.minimumValue), abs(stats.maximumValue)) or 1.0
+            )
 
             shader = QgsColorRampShader()
             ramp_type = getattr(
@@ -1286,18 +1448,24 @@ class SariagDialog(QDialog):
             )
             if ramp_type is not None:
                 shader.setColorRampType(ramp_type)
-            shader.setColorRampItemList([
-                QgsColorRampShader.ColorRampItem(
-                    -bound, _qcolor(30, 60, 200), "-%.3f m" % bound
-                ),
-                QgsColorRampShader.ColorRampItem(0.0, _qcolor(245, 245, 245), "0"),
-                QgsColorRampShader.ColorRampItem(
-                    bound, _qcolor(200, 30, 30), "+%.3f m" % bound
-                ),
-            ])
+            shader.setColorRampItemList(
+                [
+                    QgsColorRampShader.ColorRampItem(
+                        -bound, _qcolor(30, 60, 200), "-%.3f m" % bound
+                    ),
+                    QgsColorRampShader.ColorRampItem(
+                        0.0, _qcolor(245, 245, 245), "0"
+                    ),
+                    QgsColorRampShader.ColorRampItem(
+                        bound, _qcolor(200, 30, 30), "+%.3f m" % bound
+                    ),
+                ]
+            )
             raster_shader = QgsRasterShader()
             raster_shader.setRasterShaderFunction(shader)
-            renderer = QgsSingleBandPseudoColorRenderer(provider, 1, raster_shader)
+            renderer = QgsSingleBandPseudoColorRenderer(
+                provider, 1, raster_shader
+            )
             layer.setRenderer(renderer)
         except Exception as exc:  # noqa: BLE001 — styling is best-effort
             _log_warning("Impossibile applicare lo stile diverging: %s" % exc)
@@ -1305,4 +1473,5 @@ class SariagDialog(QDialog):
 
 def _qcolor(r, g, b):
     from qgis.PyQt.QtGui import QColor
+
     return QColor(r, g, b)

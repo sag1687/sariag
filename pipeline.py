@@ -85,8 +85,10 @@ def _pick_group(groups, relative_orbit=None):
 
 def _check_cancel(cancel_check):
     if cancel_check and cancel_check():
-        raise PipelineCancelled("Elaborazione annullata dall'utente. / "
-                                "Processing cancelled by the user.")
+        raise PipelineCancelled(
+            "Elaborazione annullata dall'utente. / "
+            "Processing cancelled by the user."
+        )
 
 
 def _get_valid_token(params, log):
@@ -104,8 +106,10 @@ def _get_valid_token(params, log):
     try:
         token = core_cdse.ensure_valid_token(params["_token"])
     except core_cdse.CdseError:
-        log("Sessione CDSE scaduta, nuova autenticazione... / "
-            "CDSE session expired, re-authenticating...")
+        log(
+            "Sessione CDSE scaduta, nuova autenticazione... / "
+            "CDSE session expired, re-authenticating..."
+        )
         token = core_cdse.authenticate(
             params["cdse_username"], params["cdse_password"]
         )
@@ -119,10 +123,15 @@ def _process_direction(direction, params, log, progress, cancel_check):
     work_dir = params["work_dir"]
     token = _get_valid_token(params, log)
 
-    log("[%s] Ricerca su CDSE... / [%s] Searching CDSE..." % (direction, direction))
+    log(
+        "[%s] Ricerca su CDSE... / [%s] Searching CDSE..."
+        % (direction, direction)
+    )
     results = core_cdse.search_s1_slc(
-        token["access_token"], params["bbox"],
-        params["date_from"], params["date_to"],
+        token["access_token"],
+        params["bbox"],
+        params["date_from"],
+        params["date_to"],
         orbit_direction=direction,
         relative_orbit=params.get("relative_orbit_%s" % direction.lower()),
     )
@@ -137,10 +146,18 @@ def _process_direction(direction, params, log, progress, cancel_check):
             "one interferogram (found %d, need at least 2)."
             % (direction, len(scenes), direction, len(scenes))
         )
-    log("[%s] %d scene trovate (relativeOrbit=%s). / "
+    log(
+        "[%s] %d scene trovate (relativeOrbit=%s). / "
         "[%s] %d scenes found (relativeOrbit=%s)."
-        % (direction, len(scenes), scenes[0]["relative_orbit"],
-           direction, len(scenes), scenes[0]["relative_orbit"]))
+        % (
+            direction,
+            len(scenes),
+            scenes[0]["relative_orbit"],
+            direction,
+            len(scenes),
+            scenes[0]["relative_orbit"],
+        )
+    )
 
     dl_dir = os.path.join(work_dir, direction.lower(), "safe")
     os.makedirs(dl_dir, exist_ok=True)
@@ -157,7 +174,9 @@ def _process_direction(direction, params, log, progress, cancel_check):
                 progress("download_%s_%s" % (direction, _name), pct)
 
             core_cdse.download_product(
-                token["access_token"], scene["id"], zip_path,
+                token["access_token"],
+                scene["id"],
+                zip_path,
                 progress_callback=_dl_progress,
             )
         local_paths.append(zip_path)
@@ -172,12 +191,19 @@ def _process_direction(direction, params, log, progress, cancel_check):
         pair_name = "pair_%s_%s" % (dates[i].isoformat(), dates[j].isoformat())
         log("[%s] Interferogramma %s..." % (direction, pair_name))
         out_tif = snap_graph.process_pair(
-            params["gpt_exe"], params["snaphu_exe"],
-            local_paths[i], local_paths[j], proc_dir, pair_name,
-            subswath=params["subswath"], polarisation=params["polarisation"],
-            first_burst=params["first_burst"], last_burst=params["last_burst"],
+            params["gpt_exe"],
+            params["snaphu_exe"],
+            local_paths[i],
+            local_paths[j],
+            proc_dir,
+            pair_name,
+            subswath=params["subswath"],
+            polarisation=params["polarisation"],
+            first_burst=params["first_burst"],
+            last_burst=params["last_burst"],
             dem_name=params["dem_name"],
-            rg_looks=params["rg_looks"], az_looks=params["az_looks"],
+            rg_looks=params["rg_looks"],
+            az_looks=params["az_looks"],
             pixel_spacing=params["pixel_spacing"],
             log_callback=log,
             progress_callback=lambda stage, pct, _pn=pair_name: progress(
@@ -188,10 +214,19 @@ def _process_direction(direction, params, log, progress, cancel_check):
         pair_dates.append((dates[i], dates[j]))
 
     unique_dates = sorted(set(dates))
-    log("[%s] Inversione della serie temporale (%d date, %d interferogrammi)... / "
+    log(
+        "[%s] Inversione della serie temporale (%d date, %d "
+        "interferogrammi)... / "
         "[%s] Time series inversion (%d dates, %d interferograms)..."
-        % (direction, len(unique_dates), len(pair_products),
-           direction, len(unique_dates), len(pair_products)))
+        % (
+            direction,
+            len(unique_dates),
+            len(pair_products),
+            direction,
+            len(unique_dates),
+            len(pair_products),
+        )
+    )
     stack, geo, proj = timeseries.read_raster_stack(pair_products, band=1)
     cumulative = timeseries.invert_stack(stack, unique_dates, pair_dates)
     velocity = timeseries.velocity_from_cumulative(cumulative, unique_dates)
@@ -235,8 +270,10 @@ def run_pipeline(params, log=None, progress=None, cancel_check=None):
     params = dict(params)
     os.makedirs(params["work_dir"], exist_ok=True)
 
-    log("Autenticazione su Copernicus Data Space Ecosystem... / "
-        "Authenticating with Copernicus Data Space Ecosystem...")
+    log(
+        "Autenticazione su Copernicus Data Space Ecosystem... / "
+        "Authenticating with Copernicus Data Space Ecosystem..."
+    )
     params["_token"] = core_cdse.authenticate(
         params["cdse_username"], params["cdse_password"]
     )
@@ -252,12 +289,18 @@ def run_pipeline(params, log=None, progress=None, cancel_check=None):
 
     out_vert = os.path.join(params["work_dir"], "vertical_velocity.tif")
     out_ew = os.path.join(params["work_dir"], "eastwest_velocity.tif")
-    log("Scomposizione LOS ascendente+discendente in spostamento "
+    log(
+        "Scomposizione LOS ascendente+discendente in spostamento "
         "Verticale/Est-Ovest... / Decomposing ascending+descending LOS "
-        "into Vertical/East-West displacement...")
+        "into Vertical/East-West displacement..."
+    )
     decompose.decompose_asc_desc(
-        asc_velocity_tif, desc_velocity_tif, out_vert, out_ew,
-        los_band=1, incidence_band=2,
+        asc_velocity_tif,
+        desc_velocity_tif,
+        out_vert,
+        out_ew,
+        los_band=1,
+        incidence_band=2,
         los_sign=params.get("los_sign", 1.0),
     )
     log("Completato. / Done.")

@@ -24,6 +24,7 @@ import numpy as np
 
 try:
     from osgeo import gdal
+
     gdal.UseExceptions()
     _HAS_GDAL = True
 except ImportError:
@@ -49,19 +50,25 @@ def read_band(path_or_ds, band=1):
     ds = gdal.Open(path_or_ds) if isinstance(path_or_ds, str) else path_or_ds
     if ds is None:
         raise RasterUtilsError(
-            "Impossibile aprire %s / Cannot open %s"
-            % (path_or_ds, path_or_ds)
+            "Impossibile aprire %s / Cannot open %s" % (path_or_ds, path_or_ds)
         )
     bnd = ds.GetRasterBand(band)
     arr = bnd.ReadAsArray().astype(np.float64)
     nodata = bnd.GetNoDataValue()
     if nodata is not None:
         arr[arr == nodata] = np.nan
-    return arr, ds.GetGeoTransform(), ds.GetProjection(), ds.RasterXSize, ds.RasterYSize
+    return (
+        arr,
+        ds.GetGeoTransform(),
+        ds.GetProjection(),
+        ds.RasterXSize,
+        ds.RasterYSize,
+    )
 
 
-def warp_to_reference(src_path, ref_geo, ref_proj, ref_xsize, ref_ysize,
-                      resample_alg="bilinear"):
+def warp_to_reference(
+    src_path, ref_geo, ref_proj, ref_xsize, ref_ysize, resample_alg="bilinear"
+):
     """Resample ``src_path`` onto the reference grid, returned as an
     in-memory GDAL dataset (caller reads whichever bands it needs)."""
     _require_gdal()
@@ -73,10 +80,13 @@ def warp_to_reference(src_path, ref_geo, ref_proj, ref_xsize, ref_ysize,
         ref_uly,
     )
     warped = gdal.Warp(
-        "", src_path, format="MEM",
+        "",
+        src_path,
+        format="MEM",
         dstSRS=ref_proj,
         outputBounds=out_bounds,
-        width=ref_xsize, height=ref_ysize,
+        width=ref_xsize,
+        height=ref_ysize,
         resampleAlg=resample_alg,
     )
     if warped is None:
@@ -99,7 +109,9 @@ def read_and_align_stack(paths, band=1):
     """
     _require_gdal()
     if not paths:
-        raise RasterUtilsError("Nessun raster da leggere. / No rasters to read.")
+        raise RasterUtilsError(
+            "Nessun raster da leggere. / No rasters to read."
+        )
 
     ref_arr, ref_geo, ref_proj, xsize, ysize = read_band(paths[0], band)
     arrays = [ref_arr]
@@ -115,7 +127,8 @@ def read_and_align_stack(paths, band=1):
 
 
 def write_raster(path, array, geotransform, projection, nodata=-9999.0):
-    """Write a single-band float32 GeoTIFF, mapping NaN pixels to ``nodata``."""
+    """Write a single-band float32 GeoTIFF, mapping NaN pixels to
+    ``nodata``."""
     _require_gdal()
     rows, cols = array.shape
     driver = gdal.GetDriverByName("GTiff")
@@ -130,7 +143,9 @@ def write_raster(path, array, geotransform, projection, nodata=-9999.0):
     ds = None
 
 
-def write_raster_multiband(path, arrays, geotransform, projection, nodata=-9999.0):
+def write_raster_multiband(
+    path, arrays, geotransform, projection, nodata=-9999.0
+):
     """Write a multi-band float32 GeoTIFF from a list of same-shape arrays."""
     _require_gdal()
     rows, cols = arrays[0].shape

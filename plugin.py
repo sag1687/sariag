@@ -60,7 +60,10 @@ class SariagPlugin:
             self.iface.mapCanvas().unsetMapTool(self.map_tool)
             self.map_tool = None
         if self.dialog:
-            if self.dialog.worker is not None and self.dialog.worker.isRunning():
+            if (
+                self.dialog.worker is not None
+                and self.dialog.worker.isRunning()
+            ):
                 self.dialog.worker.cancel()
                 self.dialog.worker.wait(5000)
             self.dialog.close()

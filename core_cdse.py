@@ -70,6 +70,7 @@ def _check_url_scheme(url):
 # Authentication
 # ---------------------------------------------------------------------------
 
+
 def authenticate(username, password):
     """
     Exchange CDSE username/password for an OAuth2 token pair.
@@ -77,28 +78,33 @@ def authenticate(username, password):
     Returns a dict: access_token, refresh_token, expires_at (epoch seconds),
     refresh_expires_at (epoch seconds).
     """
-    return _token_request({
-        "grant_type": "password",
-        "username": username,
-        "password": password,
-        "client_id": _CLIENT_ID,
-    })
+    return _token_request(
+        {
+            "grant_type": "password",
+            "username": username,
+            "password": password,
+            "client_id": _CLIENT_ID,
+        }
+    )
 
 
 def refresh_token(refresh_token_value):
     """Exchange a still-valid refresh token for a new access token."""
-    return _token_request({
-        "grant_type": "refresh_token",
-        "refresh_token": refresh_token_value,
-        "client_id": _CLIENT_ID,
-    })
+    return _token_request(
+        {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token_value,
+            "client_id": _CLIENT_ID,
+        }
+    )
 
 
 def _token_request(form):
     _check_url_scheme(_TOKEN_URL)
     data = urllib.parse.urlencode(form).encode("ascii")
     req = urllib.request.Request(
-        _TOKEN_URL, data=data,
+        _TOKEN_URL,
+        data=data,
         headers={
             **_HEADERS,
             "Content-Type": "application/x-www-form-urlencoded",
@@ -107,7 +113,9 @@ def _token_request(form):
     )
     now = time.time()
     try:
-        with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:  # nosec B310
+        with urllib.request.urlopen(
+            req, timeout=_TIMEOUT
+        ) as resp:  # nosec B310
             payload = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
@@ -126,9 +134,8 @@ def _token_request(form):
         "access_token": payload["access_token"],
         "refresh_token": payload.get("refresh_token", ""),
         "expires_at": now + float(payload.get("expires_in", 600)),
-        "refresh_expires_at": now + float(
-            payload.get("refresh_expires_in", 3600)
-        ),
+        "refresh_expires_at": now
+        + float(payload.get("refresh_expires_in", 3600)),
     }
 
 
@@ -152,12 +159,13 @@ def ensure_valid_token(session, margin=60):
 # Catalog search
 # ---------------------------------------------------------------------------
 
+
 def _bbox_to_polygon_wkt(bbox):
     """bbox = [west, south, east, north] -> CSC geography WKT polygon."""
     west, south, east, north = bbox
-    coords = (
-        "{w} {s},{e} {s},{e} {n},{w} {n},{w} {s}"
-    ).format(w=west, s=south, e=east, n=north)
+    coords = ("{w} {s},{e} {s},{e} {n},{w} {n},{w} {s}").format(
+        w=west, s=south, e=east, n=north
+    )
     return "SRID=4326;POLYGON(({0}))".format(coords)
 
 
@@ -209,7 +217,8 @@ def search_s1_slc(
     filters = [
         "Collection/Name eq 'SENTINEL-1'",
         "contains(Name,'IW_SLC')",
-        "OData.CSC.Intersects(area=geography'%s')" % _bbox_to_polygon_wkt(bbox),
+        "OData.CSC.Intersects(area=geography'%s')"
+        % _bbox_to_polygon_wkt(bbox),
         "ContentDate/Start gt %s" % _odata_datetime(date_from),
         "ContentDate/Start lt %s" % _odata_datetime(date_to, end_of_day=True),
     ]
@@ -232,15 +241,19 @@ def search_s1_slc(
         "$top": str(min(int(top), 1000)),
         "$expand": "Attributes",
     }
-    url = _CATALOG_URL + "?" + urllib.parse.urlencode(
-        params, quote_via=urllib.parse.quote
+    url = (
+        _CATALOG_URL
+        + "?"
+        + urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
     )
     _check_url_scheme(url)
     req = urllib.request.Request(
         url, headers={**_HEADERS, "Authorization": "Bearer " + access_token}
     )
     try:
-        with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:  # nosec B310
+        with urllib.request.urlopen(
+            req, timeout=_TIMEOUT
+        ) as resp:  # nosec B310
             payload = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
@@ -253,17 +266,18 @@ def search_s1_slc(
     results = []
     for item in payload.get("value", []):
         attrs = {
-            a.get("Name"): a.get("Value")
-            for a in item.get("Attributes", [])
+            a.get("Name"): a.get("Value") for a in item.get("Attributes", [])
         }
-        results.append({
-            "id": item.get("Id"),
-            "name": item.get("Name"),
-            "sensing_start": item.get("ContentDate", {}).get("Start"),
-            "orbit_direction": attrs.get("orbitDirection"),
-            "relative_orbit": attrs.get("relativeOrbitNumber"),
-            "size_bytes": item.get("ContentLength"),
-        })
+        results.append(
+            {
+                "id": item.get("Id"),
+                "name": item.get("Name"),
+                "sensing_start": item.get("ContentDate", {}).get("Start"),
+                "orbit_direction": attrs.get("orbitDirection"),
+                "relative_orbit": attrs.get("relativeOrbitNumber"),
+                "size_bytes": item.get("ContentLength"),
+            }
+        )
     results.sort(key=lambda r: r["sensing_start"] or "")
     return results
 
@@ -289,7 +303,10 @@ def group_by_relative_orbit(products):
 # Download
 # ---------------------------------------------------------------------------
 
-def download_product(access_token, product_id, dest_path, progress_callback=None):
+
+def download_product(
+    access_token, product_id, dest_path, progress_callback=None
+):
     """
     Download a product's full SAFE archive (zip) to ``dest_path``.
 
@@ -305,7 +322,9 @@ def download_product(access_token, product_id, dest_path, progress_callback=None
     chunk_size = 1024 * 1024  # 1 MB
 
     try:
-        with urllib.request.urlopen(req, timeout=_DOWNLOAD_TIMEOUT) as resp:  # nosec B310
+        with urllib.request.urlopen(
+            req, timeout=_DOWNLOAD_TIMEOUT
+        ) as resp:  # nosec B310
             total = int(resp.headers.get("Content-Length") or 0)
             done = 0
             with open(dest_path, "wb") as out_f:

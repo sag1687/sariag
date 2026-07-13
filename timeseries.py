@@ -154,6 +154,7 @@ def velocity_from_cumulative(cumulative, dates):
 # only deal with time series don't need to import raster_utils directly.
 # ---------------------------------------------------------------------------
 
+
 def read_raster_stack(paths, band=1):
     """Read+align ``band`` from each GeoTIFF in ``paths`` into one
     (n, rows, cols) float64 array. See

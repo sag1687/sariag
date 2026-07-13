@@ -61,8 +61,9 @@ class DecomposeError(Exception):
     pass
 
 
-def solve_vertical_eastwest(los_asc, los_desc, inc_asc_deg, inc_desc_deg,
-                            los_sign=1.0):
+def solve_vertical_eastwest(
+    los_asc, los_desc, inc_asc_deg, inc_desc_deg, los_sign=1.0
+):
     """
     Per-pixel closed-form solution of the 2x2 asc/desc LOS system.
 
@@ -93,12 +94,16 @@ def solve_vertical_eastwest(los_asc, los_desc, inc_asc_deg, inc_desc_deg,
 
     det = np.sin(theta_a + theta_d)
     with np.errstate(divide="ignore", invalid="ignore"):
-        vertical = los_sign * (
-            los_asc * np.sin(theta_d) + los_desc * np.sin(theta_a)
-        ) / det
-        east_west = los_sign * (
-            np.cos(theta_a) * los_desc - np.cos(theta_d) * los_asc
-        ) / det
+        vertical = (
+            los_sign
+            * (los_asc * np.sin(theta_d) + los_desc * np.sin(theta_a))
+            / det
+        )
+        east_west = (
+            los_sign
+            * (np.cos(theta_a) * los_desc - np.cos(theta_d) * los_asc)
+            / det
+        )
 
     singular = np.abs(det) < 1e-6
     vertical = np.where(singular, np.nan, vertical)
@@ -110,10 +115,17 @@ def solve_vertical_eastwest(los_asc, los_desc, inc_asc_deg, inc_desc_deg,
 # Raster-level orchestration
 # ---------------------------------------------------------------------------
 
+
 def decompose_asc_desc(
-    asc_tif, desc_tif, out_vertical_tif, out_eastwest_tif,
-    los_band=1, incidence_band=2, los_sign=1.0,
-    inc_asc_deg=None, inc_desc_deg=None,
+    asc_tif,
+    desc_tif,
+    out_vertical_tif,
+    out_eastwest_tif,
+    los_band=1,
+    incidence_band=2,
+    los_sign=1.0,
+    inc_asc_deg=None,
+    inc_desc_deg=None,
 ):
     """
     Load ascending/descending LOS-displacement GeoTIFFs (as produced by
@@ -130,7 +142,9 @@ def decompose_asc_desc(
         los_a, geo, proj, xsize, ysize = read_band(asc_tif, los_band)
 
         desc_ds = warp_to_reference(desc_tif, geo, proj, xsize, ysize)
-        los_d = desc_ds.GetRasterBand(los_band).ReadAsArray().astype(np.float64)
+        los_d = (
+            desc_ds.GetRasterBand(los_band).ReadAsArray().astype(np.float64)
+        )
         nodata_d = desc_ds.GetRasterBand(los_band).GetNoDataValue()
         if nodata_d is not None:
             los_d[los_d == nodata_d] = np.nan
@@ -141,7 +155,11 @@ def decompose_asc_desc(
             inc_a = float(inc_asc_deg)
 
         if inc_desc_deg is None:
-            inc_d = desc_ds.GetRasterBand(incidence_band).ReadAsArray().astype(np.float64)
+            inc_d = (
+                desc_ds.GetRasterBand(incidence_band)
+                .ReadAsArray()
+                .astype(np.float64)
+            )
             nodata_id = desc_ds.GetRasterBand(incidence_band).GetNoDataValue()
             if nodata_id is not None:
                 inc_d[inc_d == nodata_id] = np.nan

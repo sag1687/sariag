@@ -25,8 +25,11 @@ emit ``bboxDrawn(west, south, east, north)`` in EPSG:4326.
 
 from qgis.gui import QgsMapTool, QgsRubberBand
 from qgis.core import (
-    QgsPointXY, QgsRectangle, QgsWkbTypes,
-    QgsCoordinateTransform, QgsCoordinateReferenceSystem,
+    QgsPointXY,
+    QgsRectangle,
+    QgsWkbTypes,
+    QgsCoordinateTransform,
+    QgsCoordinateReferenceSystem,
     QgsProject,
 )
 from qgis.PyQt.QtCore import pyqtSignal, Qt
@@ -50,7 +53,8 @@ def transform_point_to_4326(point):
         return point.x(), point.y()
     try:
         xform = QgsCoordinateTransform(
-            project_crs, _CRS_4326,
+            project_crs,
+            _CRS_4326,
             QgsProject.instance().transformContext(),
         )
     except TypeError:
@@ -94,9 +98,9 @@ class DrawBboxTool(QgsMapTool):
 
     def canvasReleaseEvent(self, e):
         if (
-            e.button() == QtCompat.LeftButton and
-            self._drawing and
-            self._start_point is not None
+            e.button() == QtCompat.LeftButton
+            and self._drawing
+            and self._start_point is not None
         ):
             end_point = self.toMapCoordinates(e.pos())
             self._drawing = False
@@ -110,8 +114,10 @@ class DrawBboxTool(QgsMapTool):
                 return
 
             rect = QgsRectangle(
-                min(x1, x2), min(y1, y2),
-                max(x1, x2), max(y1, y2),
+                min(x1, x2),
+                min(y1, y2),
+                max(x1, x2),
+                max(y1, y2),
             )
             west, south, east, north = self._rect_to_4326(rect)
             self._start_point = None
