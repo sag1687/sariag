@@ -33,7 +33,7 @@ import os
 import platform
 import shlex
 import shutil
-import subprocess
+import subprocess  # nosec B404 - esegue solo git/make/gpt/snaphu noti
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -123,7 +123,8 @@ def find_snaphu():
 
 
 def _run(cmd, log_callback, cwd=None):
-    proc = subprocess.Popen(
+    # Comandi in forma lista, senza shell: niente injection possibile
+    proc = subprocess.Popen(  # nosec B603
         cmd,
         cwd=cwd,
         stdout=subprocess.PIPE,

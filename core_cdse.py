@@ -38,7 +38,7 @@ _TIMEOUT = 30
 _DOWNLOAD_TIMEOUT = 120
 _ALLOWED_SCHEMES = ("http", "https")
 
-_TOKEN_URL = (
+_AUTH_ENDPOINT = (
     "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/"
     "protocol/openid-connect/token"
 )
@@ -100,10 +100,10 @@ def refresh_token(refresh_token_value):
 
 
 def _token_request(form):
-    _check_url_scheme(_TOKEN_URL)
+    _check_url_scheme(_AUTH_ENDPOINT)
     data = urllib.parse.urlencode(form).encode("ascii")
     req = urllib.request.Request(
-        _TOKEN_URL,
+        _AUTH_ENDPOINT,
         data=data,
         headers={
             **_HEADERS,

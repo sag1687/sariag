@@ -34,8 +34,8 @@ Every path embedded in the generated XML is escaped with
 
 import os
 import re
-import subprocess
-from xml.sax.saxutils import escape as _x
+import subprocess  # nosec B404 - esegue solo gpt/snaphu risolti da whitelist
+from xml.sax.saxutils import escape as _x  # nosec B406 - solo escaping output
 
 from . import install_helpers
 
@@ -54,7 +54,8 @@ class SnapError(Exception):
 def _run(cmd, cwd=None, log_callback=None, progress_callback=None):
     if log_callback:
         log_callback("$ " + " ".join(cmd))
-    proc = subprocess.Popen(
+    # Comandi in forma lista, senza shell: niente injection possibile
+    proc = subprocess.Popen(  # nosec B603
         cmd,
         cwd=cwd,
         stdout=subprocess.PIPE,
