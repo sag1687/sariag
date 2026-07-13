@@ -761,10 +761,7 @@ class SariagDialog(QDialog):
         form = QFormLayout(cred_group)
         self.ed_user = QLineEdit()
         self.ed_pwd = QLineEdit()
-        try:
-            self.ed_pwd.setEchoMode(QLineEdit.EchoMode.Password)
-        except AttributeError:
-            self.ed_pwd.setEchoMode(QLineEdit.Password)
+        self.ed_pwd.setEchoMode(QLineEdit.EchoMode.Password)
         form.addRow(self._mklabel("Utente:", "Username:"), self.ed_user)
         form.addRow("Password:", self.ed_pwd)
         self.lbl_hint = QLabel()
